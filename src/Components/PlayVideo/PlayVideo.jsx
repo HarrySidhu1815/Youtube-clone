@@ -1,38 +1,46 @@
 import React, { useEffect, useState } from 'react'
 import './PlayVideo.css'
-import video1 from '../../assets/video.mp4'
 import like from '../../assets/like.png'
 import dislike from '../../assets/dislike.png'
 import share from '../../assets/share.png'
 import save from '../../assets/save.png'
-import jack from '../../assets/jack.png'
-import user_profile from '../../assets/user_profile.jpg'
-import { API_KEY, value_converter } from '../../data'
+import { value_converter } from '../../data'
 import moment from 'moment'
+import { useParams } from 'react-router-dom'
 
-const PlayVideo = ({videoId}) => {
+const PlayVideo = () => {
+
+    const {videoId} = useParams()
 
     const [apiVideoData, setApiVideoData] = useState(null)
     const [channelData, setChannelData] = useState(null)
+    const [commentData, setCommentData] = useState([])
 
     const fetchVideoData = async() => {
-        const videodata_url = `https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics&id=${videoId}&key=${API_KEY}`
+        const videodata_url = `https://youtube.googleapis.com/youtube/v3/videos?part=snippet%2CcontentDetails%2Cstatistics&id=${videoId}&key=${import.meta.env.VITE_API_KEY}`
 
         await fetch(videodata_url).then(response => response.json()).then(data => setApiVideoData(data.items[0]))
     }
 
-    const fetchChannelData = async() => {
-        const channeldata_url = `https://youtube.googleapis.com/youtube/v3/channels?part=snippet%2CcontentDetails%2Cstatistics&id=${apiVideoData.snippet.channelId}&key=${API_KEY}`
+    const fetchOtherData = async() => {
+
+        // Fetching Channel Data
+        const channeldata_url = `https://youtube.googleapis.com/youtube/v3/channels?part=snippet%2CcontentDetails%2Cstatistics&id=${apiVideoData.snippet.channelId}&key=${import.meta.env.VITE_API_KEY}`
 
         await fetch(channeldata_url).then(response => response.json()).then(data => setChannelData(data.items[0]))
+
+        //Fetching Comment Data
+        const comment_url = `https://youtube.googleapis.com/youtube/v3/commentThreads?part=snippet%2Creplies&maxResults=20&videoId=${videoId}&key=${import.meta.env.VITE_API_KEY}`
+
+        await fetch(comment_url).then(response => response.json()).then(data => setCommentData(data.items))
     }
 
     useEffect(() => {
         fetchVideoData()
-    }, [])
+    }, [videoId])
 
     useEffect(() => {
-        fetchChannelData()
+        fetchOtherData()
     }, [apiVideoData])
 
   return (
@@ -62,54 +70,20 @@ const PlayVideo = ({videoId}) => {
         <p>{apiVideoData ? apiVideoData.snippet.description.slice(0, 250)  : "Decription Here"}</p>
         <hr />
         <h4>{apiVideoData ? value_converter(apiVideoData.statistics.commentCount) : "102"} Comments</h4>
-        <div className="comment">
-            <img src={user_profile}/>
+        {commentData.map((item, index) => (
+            <div key={index} className="comment">
+            <img src={item.snippet.topLevelComment.snippet.authorProfileImageUrl}/>
             <div>
-                <h3>Jack Nicholson <span>1 day ago</span></h3>
-                <p>A global computer network providing a variety of information and communication facilities, consisting of interconnected networks using standardized communication protocols.</p>
+                <h3>{item.snippet.topLevelComment.snippet.authorDisplayName}<span>{moment(item.snippet.topLevelComment.snippet.updatedAt).fromNow()}</span></h3>
+                <p>{item.snippet.topLevelComment.snippet.textDisplay}</p>
                 <div className="comment-action">
                     <img src={like} alt=""/>
-                    <span>244</span>
+                    <span>{value_converter(item.snippet.topLevelComment.snippet.likeCount)}</span>
                     <img src={dislike} alt=""/>
                 </div>
             </div>
         </div>
-        <div className="comment">
-            <img src={user_profile}/>
-            <div>
-                <h3>Jack Nicholson <span>1 day ago</span></h3>
-                <p>A global computer network providing a variety of information and communication facilities, consisting of interconnected networks using standardized communication protocols.</p>
-                <div className="comment-action">
-                    <img src={like} alt=""/>
-                    <span>244</span>
-                    <img src={dislike} alt=""/>
-                </div>
-            </div>
-        </div>
-        <div className="comment">
-            <img src={user_profile}/>
-            <div>
-                <h3>Jack Nicholson <span>1 day ago</span></h3>
-                <p>A global computer network providing a variety of information and communication facilities, consisting of interconnected networks using standardized communication protocols.</p>
-                <div className="comment-action">
-                    <img src={like} alt=""/>
-                    <span>244</span>
-                    <img src={dislike} alt=""/>
-                </div>
-            </div>
-        </div>
-        <div className="comment">
-            <img src={user_profile}/>
-            <div>
-                <h3>Jack Nicholson <span>1 day ago</span></h3>
-                <p>A global computer network providing a variety of information and communication facilities, consisting of interconnected networks using standardized communication protocols.</p>
-                <div className="comment-action">
-                    <img src={like} alt=""/>
-                    <span>244</span>
-                    <img src={dislike} alt=""/>
-                </div>
-            </div>
-        </div>
+        ))} 
       </div>
     </div>
   )

@@ -21,3 +21,8 @@
     font-size: 13px;
     margin-bottom: 5px;
 }
+@media (max-width: 990px) {
+    .recommended{
+        flex-basis: 100%;
+    }
+}
